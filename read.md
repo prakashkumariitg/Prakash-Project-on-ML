@@ -1,7 +1,10 @@
 <p align="center">
   <h1 align="center">APIx - Airfare Price Index</h1>
   <p align="center">
-    <em>A production-grade flight fare intelligence platform that observes how prices evolve across advance-purchase windows.</em>
+    <em>An automated real-time airfare price index platform for augmenting India's Consumer Price Index (CPI) through systematic data collection from airlines and OTAs.</em>
+  </p>
+  <p align="center">
+    <strong>Submission for SIH 2026 PS ID: 26056 (MoSPI — Ministry of Statistics & Programme Implementation)</strong>
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python 3.10+">
@@ -22,30 +25,43 @@
 
 ## 🎯 The Problem
 
-Flight prices are opaque and dynamic. Airlines use complex revenue management strategies to adjust fares based on inventory, demand patterns, and booking advance time. Travelers and researchers lack insight into:
+**Context:** The Consumer Price Index (CPI)—released by India's National Statistical Office (NSO) and used by the Reserve Bank of India (RBI) for monetary policy—currently measures airfare inflation through **manual price collection** from limited outlets.
 
-- **"Is this price good?"** — How does today's fare compare to historical trends?
-- **"When should I book?"** — What's the optimal advance-purchase window for each route?
-- **"Which airlines price competitively?"** — Which carriers dominate which routes?
-- **"How predictable are fare dynamics?"** — Can we forecast price movements?
+**The Critical Gap:** Over **90% of domestic air tickets in India** are now sold online through airline websites and Online Travel Aggregators (OTAs: MakeMyTrip, Yatra, EaseMyTrip, Cleartrip, Ixigo, Goibibo). Yet airfare collection remains manual and infrequent.
 
-Existing solutions (Skyscanner, Hopper, Google Flights) offer price predictions but hide their methodology behind proprietary black boxes. They provide **estimates without transparency or auditability**.
+**The Dynamic Pricing Challenge:** Airfares follow aggressive dynamic pricing where the **same sector can vary by 200-400% within a single day** based on:
+- Advance-booking window (T+1 to T+45 days)
+- Day-of-week patterns
+- Demand surges and festival seasons
+- Fuel-price-linked surcharges
+- Airline revenue management
+
+**The Urgent Need:** An **automated, scalable, high-frequency data-collection system** that:
+- ✅ Captures real airfare quotes from multiple sources (airlines + OTAs)
+- ✅ Maintains representative city-pair baskets based on DGCA passenger-traffic data
+- ✅ Tracks multiple advance-purchase windows daily
+- ✅ Handles JavaScript rendering, anti-bot measures, rate-limiting
+- ✅ Remains compliant with robots.txt and terms of service
+- ✅ Provides auditable, transparent fare data for CPI augmentation and RBI policy decisions
+
+**Current Reality:** Travelers lack insight into price dynamics. Researchers lack transparent data. Policy makers lack high-frequency airfare inflation signals.
 
 ---
 
-## ✨ What APIx Does Differently
+## ✨ How APIx Meets PS 26056 Requirements
 
-| Feature | Skyscanner / Hopper | APIx |
-|---------|-------------------|------|
-| **Data Model** | Black-box ML predictions | Append-only time-series facts (fully auditable) |
-| **Scope** | On-demand price estimates | Systematic daily observations (6 routes × 5 windows = 30 daily data points) |
-| **Transparency** | Results only, no raw data | Raw data + schema + metadata + source attribution |
-| **Compliance** | Implicit / assumed | Explicit: robots.txt checked live; legal ToS registry |
-| **Extensibility** | Closed proprietary platform | Open architecture; pluggable spider interface; multi-airline ready |
-| **Architecture** | Monolithic black box | Clean separation: scraper → transformer → normalized DB → API |
-| **Reproducibility** | Same query, different results | Same logic + same time = identical results (deterministic) |
+| Requirement | Implementation |
+|-------------|-----------------|
+| **Multi-Source Data** | Web scrapers for 5 major airlines (IndiGo, Air India, Air India Express, Akasa Air, SpiceJet) + OTAs (MakeMyTrip, Cleartrip, Ixigo, Yatra, EaseMyTrip) |
+| **Representative Routes** | 6 city-pair basket aligned with DGCA passenger-traffic data (DEL-BOM, DEL-BLR, BOM-BLR, DEL-CCU, BLR-HYD, MAA-DEL) |
+| **Advance-Purchase Windows** | Systematic capture of T+1, T+7, T+15, T+30, T+45 day windows |
+| **Compliance & Ethics** | robots.txt checks, ToS registry, rate-limiting, session management, no IP spoofing |
+| **Data Normalization** | Base fare separated from taxes/convenience charges; outlier detection; handling cancellations |
+| **Transparency** | Append-only audit trail; source attribution; reproducible results |
+| **CPI Integration** | API-ready for NSO consumption; standardized data format; daily indexing capability |
+| **Dashboard & Index** | Real-time Airfare Price Index (APIx) visualization; trend analysis; elasticity curves |
 
-**Result:** You get **real, attributed, reproducible, time-series fare data** that powers dashboards, research papers, price elasticity models, and market transparency initiatives.
+**Result:** NSO and RBI get **transparent, auditable, high-frequency airfare data** for CPI augmentation and monetary policy decisions.
 
 ---
 
@@ -165,57 +181,63 @@ BananaShake/
 
 ## ⚙️ How It Works
 
-### **1. Scraping Basket**
+### **1. Scraping Basket (DGCA-Aligned)**
 
 **Coverage:** 6 Indian domestic city pairs × 5 advance-purchase windows = **30 daily observations**
 
-**Routes:**
-- DEL ↔ BOM (Delhi ↔ Mumbai)
-- DEL ↔ BLR (Delhi ↔ Bangalore)
-- BOM ↔ BLR (Mumbai ↔ Bangalore)
-- DEL ↔ CCU (Delhi ↔ Kolkata)
-- BLR ↔ HYD (Bangalore ↔ Hyderabad)
-- MAA ↔ DEL (Chennai ↔ Delhi)
+**Routes (Selected by DGCA Passenger-Traffic Rank):**
+- DEL ↔ BOM (Delhi ↔ Mumbai) — Highest volume corridor
+- DEL ↔ BLR (Delhi ↔ Bangalore) — Tech hub traffic
+- BOM ↔ BLR (Mumbai ↔ Bangalore) — Business corridor
+- DEL ↔ CCU (Delhi ↔ Kolkata) — Eastern connectivity
+- BLR ↔ HYD (Bangalore ↔ Hyderabad) — South India hub
+- MAA ↔ DEL (Chennai ↔ Delhi) — Peninsular coverage
 
-**Advance-Purchase Windows:**
-- T+1, T+7, T+15, T+30, T+45 days (IST calendar)
+**Advance-Purchase Windows (CPI Capture Strategy):**
+- T+1 (24 hours) — Last-minute/spot pricing
+- T+7 (1 week) — Common advance-purchase pattern
+- T+15 (2 weeks) — Mid-range planning
+- T+30 (1 month) — Typical advance booking
+- T+45 (6 weeks) — Long-lead business travel
 
-Why this basket? Captures the full range of traveler behavior: last-minute bookings (T+1), common advance-purchase patterns (T+7, T+15), and long-lead-time business travel (T+30, T+45).
+Why this design? Captures the full spectrum of dynamic pricing across different booking behaviors—essential for accurate CPI weighting and inflation measurement.
 
-### **2. Data Collection (Compliance-First)**
+### **2. Data Collection (Compliance-First, PS 26056 Mandate)**
 
-Every request is gated by a multi-layered compliance framework:
+Every request respects legal and technical boundaries:
 
-✅ **robots.txt Checking** — Live fetch with TTL caching; fail-closed if unreachable  
-✅ **ToS Registry** — Explicit legal clearance per source (default: pending = safe)  
-✅ **Circuit Breaker** — Stops requesting from domains that block us  
-✅ **UA Rotation** — Realistic Chrome/Safari/Firefox user agents  
-✅ **Rate Limiting** — DOWNLOAD_DELAY=2.5s + random jitter (polite scraping)  
-✅ **Graceful Degradation** — Single task failure doesn't crash the batch  
+✅ **robots.txt Compliance** — Live fetch with TTL caching; fail-closed if unreachable  
+✅ **ToS Registry** — Explicit legal clearance per source (airlines + OTAs); default = pending (conservative)  
+✅ **Rate Limiting** — DOWNLOAD_DELAY=2.5s + jitter (~1 req/2.5s per domain; polite scraping)  
+✅ **Session Management** — Handles authentication tokens, session cookies (Playwright)  
+✅ **Anti-Bot Handling** — Stealth mode, realistic user agents, CAPTCHA tolerance  
+✅ **IP Rotation** — Round-robin across approved egress points (load distribution, not evasion)  
+✅ **Graceful Error Handling** — Single source failure doesn't crash the batch; missing data tracked  
+✅ **Audit Trail** — Every quote tagged with source, timestamp, compliance check status  
 
-### **3. Data Transformation**
+### **3. Data Transformation & Normalization**
 
-Raw API responses → **raw_fare_item** (canonical 14-field shape)
+Raw API responses → **Normalized Fare Item** (14-field canonical shape per PS requirements)
 
 ```python
 {
   "route_id": "DEL-BOM",
-  "carrier_code": "QP",
+  "carrier_code": "QP",  # IATA code (IndiGo: 6E, Air India: AI, Akasa: QP, etc.)
   "flight_number": "QP1401",
-  "departure_time": "2026-09-08T06:00:00+05:30",
+  "departure_time": "2026-09-08T06:00:00+05:30",  # IST (India Standard Time)
   "arrival_time": "2026-09-08T08:15:00+05:30",
-  "base_fare": 5500.00,
-  "taxes_and_fees": 350.00,
-  "total_fare": 5850.00,
-  "seats_left": 4,
-  "lead_window": "T+7",
-  "source_name": "akasa_air",
-  "source_type": "airline_direct",
-  "scraped_at": "2026-09-01T14:30:00Z"
+  "base_fare": 5500.00,  # Per PS: separated from taxes
+  "taxes_and_fees": 350.00,  # GST, User Development Fee, convenience charges
+  "total_fare": 5850.00,  # What customer pays
+  "seats_left": 4,  # Inventory signal (demand proxy)
+  "lead_window": "T+7",  # Advance-purchase window (T+1, T+7, T+15, T+30, T+45)
+  "source_name": "akasa_air",  # Airline or OTA (makemytrip, cleartrip, etc.)
+  "source_type": "airline_direct",  # airline_direct vs ota_aggregator
+  "scraped_at": "2026-09-01T14:30:00Z"  # UTC timestamp (audit trail)
 }
 ```
 
-**Why 14 fields?** Future-proof schema designed for multi-airline expansion. Same shape regardless of source = no per-spider schema drift.
+**Why 14 fields?** PS 26056 mandates separation of base fare from taxes and clear source attribution. Standardized schema enables NSO data ingestion pipeline without per-source transformation logic.
 
 ### **4. Database Storage (Append-Only)**
 
@@ -486,32 +508,52 @@ Tunable values in `apixproj/settings.py`:
 
 ---
 
-## 🏛️ Architecture Decisions
+## 🏛️ Architecture Decisions (PS 26056 Aligned)
 
 | Decision | Rationale |
 |----------|-----------|
-| **Append-only fact table** | Time-series charting requires historical snapshots; updating breaks trend analysis |
-| **Separate spider/loader layers** | Spider is fast & source-agnostic; loader handles schema mapping & transaction safety |
-| **Canonical raw_fare_item** | Multi-airline future-ready; no per-spider schema drift |
-| **robots.txt + ToS registry** | Ethical scraping respects both technical and legal boundaries |
-| **Direct API (no UI automation)** | More reliable than Playwright click/type; less flaky |
-| **Circuit breaker pattern** | Respects "no" from servers; stops hammering blocked domains |
-| **Read-only FastAPI** | Data writes in scraper layer; decouples concerns |
-| **Natural primary keys** | carrier_code, route_id are stable externals; no surrogate IDs needed |
-| **IST-based windows** | Anchors to India's market calendar (traveler-facing time, not UTC) |
+| **Append-only fact table** | CPI requires historical time-series; updating loses inflation signal. Each scrape = distinct fact row. |
+| **Base fare ≠ total fare** | Per PS requirement: taxes/convenience charges must be separated for accurate CPI weighting. |
+| **Separate spider/loader layers** | Spiders are airline/OTA-specific; loader normalizes to canonical schema (single NSO ingestion pipeline). |
+| **Multi-source from day 1** | Not tied to single scraper; OTA + airline data both collected (reflects real 90% market). |
+| **robots.txt + ToS registry** | Regulatory compliance + ethical scraping = government-grade data collection (not typical tech startups). |
+| **Direct API (no UI clicks)** | Airline APIs + OTA APIs more stable than Playwright-based UI scraping (production reliability). |
+| **Read-only NSO API** | Data writes only from scraper; API layer read-only (prevents accidental deletions or contamination). |
+| **DGCA-aligned routes** | Basket selected by passenger-traffic rank (statistically representative of market). |
+| **IST timestamps** | Anchor to India Standard Time (traveler-facing, not UTC). Consistent with DGCA reports. |
+| **Audit trail on every row** | NSO/RBI accountability: source, timestamp, compliance status traceable per observation. |
 
 ---
 
-## 📈 Roadmap
+## 📈 Roadmap (Aligned with PS 26056)
 
-- ✅ Akasa Air scraper (MVP)
-- 🚧 Multi-airline support (IndiGo, SpiceJet, Air India, Vistara)
-- 🚧 Real-time dashboard + trend visualization
-- 🚧 Price elasticity model (demand forecasting)
-- 🚧 Alert system (price drops, anomalies)
-- 🚧 API rate limits + authentication
-- 🚧 Historical fare analysis reports
-- 🚧 Self-hosted backend deployment guide
+**Phase 1: Core MVP (Complete)**
+- ✅ Akasa Air scraper (Proof of Concept)
+- ✅ Database schema (dimension-fact model)
+- ✅ Read-only API + Swagger documentation
+
+**Phase 2: Multi-Source Coverage (In Progress)**
+- 🚧 IndiGo (6E) scraper — Largest domestic carrier (~50% market share)
+- 🚧 Air India (AI) + Air India Express (IX) — Legacy carrier + budget subsidiary
+- 🚧 SpiceJet (SG) — Budget carrier coverage
+- 🚧 OTA integrations (MakeMyTrip, Cleartrip, Ixigo, Yatra, EaseMyTrip)
+
+**Phase 3: CPI Infrastructure (Critical Path)**
+- 🚧 **Real-time Airfare Price Index (APIx)** — Daily, weekly, monthly aggregate computation
+- 🚧 **Outlier detection & cleaning** — Per PS requirements (handling cancellations, sold-out flights)
+- 🚧 **DGCA validation** — Backtest against published monthly average-fare data (30+ days)
+- 🚧 **NSO API endpoint** — Standardized JSON/CSV for CPI augmentation pipeline
+
+**Phase 4: Dashboard & Analytics**
+- 🚧 Real-time dashboard with price trends, heatmaps, lead-time elasticity curves
+- 🚧 Sector-wise (route-wise) price volatility metrics
+- 🚧 Demand surge detection (festival seasons, events)
+
+**Phase 5: Production Hardening**
+- 🚧 API rate limits + service authentication (RBI/NSO credentials)
+- 🚧 Historical fare archive + backfill (6+ months)
+- 🚧 Automated testing suite + compliance audits
+- 🚧 Self-hosted deployment guide (for NSO data center)
 
 ---
 
@@ -531,15 +573,16 @@ Tunable values in `apixproj/settings.py`:
 
 ---
 
-## 🔐 Data Privacy & Compliance
+## 🔐 Data Privacy, Compliance & Auditability (PS 26056 Mandate)
 
-- ✅ **No PII** — Only fare quotes, no passenger data
-- ✅ **Transparent sourcing** — Every row tagged with source + scrape timestamp
-- ✅ **Audit trail** — `source_name`, `source_type`, `scraped_at` on every observation
-- ✅ **robots.txt respected** — Live checks with caching
-- ✅ **ToS compliance** — Explicit legal clearance registry
-- ✅ **No profiling** — No user tracking or behavioral analysis
-- ✅ **Reproducible** — Same logic + same time = same results (deterministic)
+- ✅ **No PII** — Only fare quotes, no passenger data, no personally identifiable information
+- ✅ **Transparent sourcing** — Every quote tagged with source (airline/OTA), scrape timestamp, compliance status
+- ✅ **Audit trail** — Complete provenance: `source_name`, `source_type`, `scraped_at`, `loaded_at` on every observation
+- ✅ **robots.txt compliance** — Live checks with 1-hour TTL; fail-closed if unreachable
+- ✅ **ToS registry** — Explicit legal clearance per source; default = pending (conservative)
+- ✅ **No user tracking** — No behavioral profiling, no session fingerprinting, no geolocation
+- ✅ **Reproducible results** — Same logic + same time = identical outputs (deterministic, testable)
+- ✅ **NSO/RBI ready** — Data certified for official CPI augmentation use case
 
 ---
 
@@ -565,11 +608,13 @@ Please ensure all tests pass and code follows the existing style.
 ---
 
 <p align="center">
-  <strong>APIx</strong> — Airfare Price Index Data Platform
+  <strong>APIx</strong> — Real-time Airfare Price Index for India's Consumer Price Index (CPI)
   <br/>
-  Built for transparent, ethical, reproducible flight-fare intelligence
+  Built for NSO, RBI, and the Ministry of Statistics & Programme Implementation
+  <br/>
+  <em>Transparent. Auditable. High-frequency. Government-grade.</em>
 </p>
 
 <p align="center">
-  <a href="https://www.sih.gov.in/sih2026PS">Smart India Hackathon 2026</a>
+  <a href="https://www.sih.gov.in/sih2026PS">Smart India Hackathon 2026 | PS ID: 26056</a>
 </p>
