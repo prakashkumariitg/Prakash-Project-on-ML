@@ -4,7 +4,7 @@
     <em>An automated real-time airfare price index platform for augmenting India's Consumer Price Index (CPI) through systematic data collection from airlines and OTAs.</em>
   </p>
   <p align="center">
-    <strong>Submission for SIH 2026 PS ID: 26056 (MoSPI — Ministry of Statistics & Programme Implementation)</strong>
+    <strong>Submission for SIH 2026: National Airfare Price Index for CPI Augmentation (MoSPI — Ministry of Statistics & Programme Implementation)</strong>
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python 3.10+">
@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/license-MIT-orange" alt="MIT License">
   </p>
   <p align="center">
-    <strong>Smart India Hackathon 2026 | PS ID: 26056</strong>
+    <strong>Smart India Hackathon 2026 | National Airfare Price Index for CPI Augmentation</strong>
   </p>
   <p align="center">
     <a href="https://www.sih.gov.in/sih2026PS">View Problem Statement</a>
@@ -48,15 +48,15 @@
 
 ---
 
-## ✨ How APIx Meets PS 26056 Requirements
+## ✨ How APIx Meets the Initiative Requirements
 
 | Requirement | Implementation |
 |-------------|-----------------|
-| **Multi-Source Data** | Web scrapers for 5 major airlines (IndiGo, Air India, Air India Express, Akasa Air, SpiceJet) + OTAs (MakeMyTrip, Cleartrip, Ixigo, Yatra, EaseMyTrip) |
+| **Multi-Source Data** | MVP: Akasa Air spider (direct API, compliance-first). Architecture supports easy addition of IndiGo, Air India, OTA integrations. Extensible pipeline via `apixproj/spiders/` |
 | **Representative Routes** | 6 city-pair basket aligned with DGCA passenger-traffic data (DEL-BOM, DEL-BLR, BOM-BLR, DEL-CCU, BLR-HYD, MAA-DEL) |
 | **Advance-Purchase Windows** | Systematic capture of T+1, T+7, T+15, T+30, T+45 day windows |
 | **Compliance & Ethics** | robots.txt checks, ToS registry, rate-limiting, session management, no IP spoofing |
-| **Data Normalization** | Base fare separated from taxes/convenience charges; outlier detection; handling cancellations |
+| **Data Normalization** | Base fare separated from taxes/convenience charges; canonical 16-field schema for NSO ingestion |
 | **Transparency** | Append-only audit trail; source attribution; reproducible results |
 | **CPI Integration** | API-ready for NSO consumption; standardized data format; daily indexing capability |
 | **Economic Analysis** | Airfare Price Index computation; volatility measurement; seasonal pattern detection for CPI weighting |
@@ -90,7 +90,7 @@
                       │
         ┌─────────────▼───────────────────┐
         │  Data Transformation             │
-        │  ✅ raw_fare_item (14 fields)    │
+        │  ✅ raw_fare_item (16 fields)    │
         │  ✅ Canonical shape              │
         │  ✅ Source-agnostic format       │
         └─────────────┬───────────────────┘
@@ -140,7 +140,7 @@ BananaShake/
 ├── apixproj/                           # Scrapy project
 │   ├── spiders/
 │   │   └── akasa_air_spider.py        # Akasa Air web scraper (direct API)
-│   ├── raw_fare_item.py               # Canonical data model (14 fields)
+│   ├── raw_fare_item.py               # Canonical data model (16 fields)
 │   ├── settings.py                    # Scrapy + Playwright configuration
 │   └── __init__.py
 │
@@ -202,7 +202,7 @@ BananaShake/
 
 Why this design? Captures the full spectrum of dynamic pricing across different booking behaviors—essential for accurate CPI weighting and inflation measurement.
 
-### **2. Data Collection (Compliance-First, PS 26056 Mandate)**
+### **2. Data Collection (Compliance-First, Government Mandate)**
 
 Every request respects legal and technical boundaries:
 
@@ -217,27 +217,30 @@ Every request respects legal and technical boundaries:
 
 ### **3. Data Transformation & Normalization**
 
-Raw API responses → **Normalized Fare Item** (14-field canonical shape per PS requirements)
+Raw API responses → **Normalized Fare Item** (16-field canonical schema)
 
 ```python
 {
   "route_id": "DEL-BOM",
+  "origin": "DEL",
+  "destination": "BOM",
   "carrier_code": "QP",  # IATA code (IndiGo: 6E, Air India: AI, Akasa: QP, etc.)
+  "airline_name": "Akasa Air",
   "flight_number": "QP1401",
   "departure_time": "2026-09-08T06:00:00+05:30",  # IST (India Standard Time)
   "arrival_time": "2026-09-08T08:15:00+05:30",
-  "base_fare": 5500.00,  # Per PS: separated from taxes
+  "base_fare": 5500.00,  # Per initiative: separated from taxes
   "taxes_and_fees": 350.00,  # GST, User Development Fee, convenience charges
   "total_fare": 5850.00,  # What customer pays
   "seats_left": 4,  # Inventory signal (demand proxy)
   "lead_window": "T+7",  # Advance-purchase window (T+1, T+7, T+15, T+30, T+45)
   "source_name": "akasa_air",  # Airline or OTA (makemytrip, cleartrip, etc.)
   "source_type": "airline_direct",  # airline_direct vs ota_aggregator
-  "scraped_at": "2026-09-01T14:30:00Z"  # UTC timestamp (audit trail)
+  "scraped_at_timestamp": "2026-09-01T14:30:00Z"  # UTC timestamp (audit trail)
 }
 ```
 
-**Why 14 fields?** PS 26056 mandates separation of base fare from taxes and clear source attribution. Standardized schema enables NSO data ingestion pipeline without per-source transformation logic.
+**Why 16 fields?** The initiative mandates separation of base fare from taxes and clear source attribution. Standardized 16-field schema (`route_id`, `carrier_code`, `flight_number`, `departure_time`, `arrival_time`, `base_fare`, `taxes_and_fees`, `total_fare`, `seats_left`, `lead_window`, `source_name`, `source_type`, `scraped_at_timestamp`, `airline_name`, `origin`, `destination`) enables NSO data ingestion pipeline without per-source transformation logic.
 
 ### **4. Database Storage (Append-Only)**
 
@@ -261,9 +264,9 @@ CREATE TABLE routes (
 
 -- Fact: Time-series observations (append-only)
 CREATE TABLE fare_observations (
-  id INT PRIMARY KEY AUTOINCREMENT,
-  route_id VARCHAR FK,
-  carrier_code VARCHAR FK,
+  id SERIAL PRIMARY KEY,
+  route_id VARCHAR NOT NULL REFERENCES routes(route_id),
+  carrier_code VARCHAR NOT NULL REFERENCES carriers(carrier_code),
   flight_number VARCHAR,
   departure_time TIMESTAMP,
   arrival_time TIMESTAMP,
@@ -271,20 +274,29 @@ CREATE TABLE fare_observations (
   taxes_and_fees DECIMAL(10,2),
   total_fare DECIMAL(10,2),
   seats_left INT,
-  lead_window VARCHAR,
-  source_name VARCHAR,
-  scraped_at TIMESTAMP NOT NULL,  -- When quote was fetched
+  lead_window VARCHAR NOT NULL,
+  source_name VARCHAR NOT NULL,
+  source_type VARCHAR NOT NULL,
+  scraped_at TIMESTAMP NOT NULL,  -- UTC timestamp (audit trail)
   loaded_at TIMESTAMP DEFAULT now(),
   
-  UNIQUE (route_id, carrier_code, flight_number, 
-          departure_time, lead_window, scraped_at),
-  INDEX (route_id, lead_window, scraped_at)
+  CONSTRAINT uq_fare_observations_identity UNIQUE (
+    route_id, carrier_code, flight_number, 
+    departure_time, lead_window, scraped_at
+  )
 );
+
+CREATE INDEX ix_fare_observations_route_window_date 
+  ON fare_observations(route_id, lead_window, scraped_at);
+CREATE INDEX ix_fare_observations_route_id_scraped_at 
+  ON fare_observations(route_id, scraped_at);
+CREATE INDEX ix_fare_observations_lead_window 
+  ON fare_observations(lead_window);
 ```
 
 **Design Principle:** FareObservation is **append-only** because it's a time-series. Same flight at different scrape times = distinct rows (essential for trend analysis).
 
-**Loading:** Idempotent upsert via `ON CONFLICT DO NOTHING` (safe for retries).
+**Loading:** Idempotent upsert via `ON CONFLICT ... DO NOTHING` (safe for retries).
 
 ### **5. API Layer (Read-Only)**
 
@@ -463,9 +475,9 @@ CREATE TABLE routes (
 ### FareObservation (Fact Table - Append-Only)
 ```sql
 CREATE TABLE fare_observations (
-  id INT PRIMARY KEY AUTOINCREMENT,
-  route_id VARCHAR NOT NULL FK routes(route_id),
-  carrier_code VARCHAR NOT NULL FK carriers(carrier_code),
+  id SERIAL PRIMARY KEY,
+  route_id VARCHAR NOT NULL REFERENCES routes(route_id),
+  carrier_code VARCHAR NOT NULL REFERENCES carriers(carrier_code),
   flight_number VARCHAR,
   departure_time TIMESTAMP,
   arrival_time TIMESTAMP,
@@ -473,20 +485,24 @@ CREATE TABLE fare_observations (
   taxes_and_fees DECIMAL(10,2),
   total_fare DECIMAL(10,2),
   seats_left INT,
-  lead_window VARCHAR,                  -- "T+1", "T+7", "T+15", "T+30", "T+45"
-  source_name VARCHAR,                  -- "akasa_air"
-  source_type VARCHAR,                  -- "airline_direct"
-  scraped_at TIMESTAMP NOT NULL,        -- When this quote was fetched (UTC)
+  lead_window VARCHAR NOT NULL,                  -- "T+1", "T+7", "T+15", "T+30", "T+45"
+  source_name VARCHAR NOT NULL,                  -- "akasa_air"
+  source_type VARCHAR NOT NULL,                  -- "airline_direct"
+  scraped_at TIMESTAMP NOT NULL,        -- UTC timestamp (audit trail)
   loaded_at TIMESTAMP DEFAULT now(),
   
-  CONSTRAINT unique_observation UNIQUE (
+  CONSTRAINT uq_fare_observations_identity UNIQUE (
     route_id, carrier_code, flight_number, departure_time, 
     lead_window, scraped_at
-  ),
-  INDEX idx_route_window_date (route_id, lead_window, scraped_at),
-  INDEX idx_route_date (route_id, scraped_at),
-  INDEX idx_window (lead_window)
+  )
 );
+
+CREATE INDEX ix_fare_observations_route_window_date 
+  ON fare_observations(route_id, lead_window, scraped_at);
+CREATE INDEX ix_fare_observations_route_id_scraped_at 
+  ON fare_observations(route_id, scraped_at);
+CREATE INDEX ix_fare_observations_lead_window 
+  ON fare_observations(lead_window);
 ```
 
 **Why append-only?** Time-series inflation measurement requires historical snapshots. Each quote at each moment = distinct fact. Updating rows would lose the temporal price evolution essential for CPI calculation.
@@ -508,7 +524,7 @@ Tunable values in `apixproj/settings.py`:
 
 ---
 
-## 🏛️ Architecture Decisions (PS 26056 Aligned)
+## 🏛️ Architecture Decisions (Initiative-Aligned)
 
 | Decision | Rationale |
 |----------|-----------|
@@ -525,39 +541,7 @@ Tunable values in `apixproj/settings.py`:
 
 ---
 
-## 📈 Roadmap (Aligned with PS 26056)
-
-**Phase 1: Core MVP (Complete)**
-- ✅ Akasa Air scraper (Proof of Concept)
-- ✅ Database schema (dimension-fact model)
-- ✅ Read-only API + Swagger documentation
-
-**Phase 2: Multi-Source Coverage (In Progress)**
-- 🚧 IndiGo (6E) scraper — Largest domestic carrier (~50% market share)
-- 🚧 Air India (AI) + Air India Express (IX) — Legacy carrier + budget subsidiary
-- 🚧 SpiceJet (SG) — Budget carrier coverage
-- 🚧 OTA integrations (MakeMyTrip, Cleartrip, Ixigo, Yatra, EaseMyTrip)
-
-**Phase 3: CPI Infrastructure (Critical Path)**
-- 🚧 **Real-time Airfare Price Index (APIx)** — Daily, weekly, monthly aggregate computation
-- 🚧 **Outlier detection & cleaning** — Per PS requirements (handling cancellations, sold-out flights)
-- 🚧 **DGCA validation** — Backtest against published monthly average-fare data (30+ days)
-- 🚧 **NSO API endpoint** — Standardized JSON/CSV for CPI augmentation pipeline
-
-**Phase 4: Analytics & Policy Dashboard**
-- 🚧 NSO policy dashboard — Price trends, volatility metrics, seasonal patterns
-- 🚧 Economic analysis — Lead-time elasticity, demand surge correlation with events
-- 🚧 Outlier flagging — Automatically identify unusual price movements for investigator review
-
-**Phase 5: Production Hardening**
-- 🚧 API rate limits + service authentication (RBI/NSO credentials)
-- 🚧 Historical fare archive + backfill (6+ months)
-- 🚧 Automated testing suite + compliance audits
-- 🚧 Self-hosted deployment guide (for NSO data center)
-
----
-
-## 📚 Tech Stack
+##  Tech Stack
 
 | Component | Technology | Version |
 |-----------|-----------|---------|
@@ -573,7 +557,7 @@ Tunable values in `apixproj/settings.py`:
 
 ---
 
-## 🔐 Data Privacy, Compliance & Auditability (PS 26056 Mandate)
+## 🔐 Data Privacy, Compliance & Auditability (Government Mandate)
 
 - ✅ **No PII** — Only fare quotes, no passenger data, no personally identifiable information
 - ✅ **Transparent sourcing** — Every quote tagged with source (airline/OTA), scrape timestamp, compliance status
@@ -616,5 +600,5 @@ Please ensure all tests pass and code follows the existing style.
 </p>
 
 <p align="center">
-  <a href="https://www.sih.gov.in/sih2026PS">Smart India Hackathon 2026 | PS ID: 26056</a>
+  <a href="https://www.sih.gov.in/sih2026PS">Smart India Hackathon 2026 | National Airfare Price Index for CPI Augmentation</a>
 </p>
