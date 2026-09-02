@@ -44,7 +44,7 @@
 - ✅ Remains compliant with robots.txt and terms of service
 - ✅ Provides auditable, transparent fare data for CPI augmentation and RBI policy decisions
 
-**Current Reality:** Policy makers and statisticians lack high-frequency airfare inflation signals for accurate CPI measurement. Researchers lack transparent, reproducible data. NSO and RBI lack infrastructure for systematic multi-source data collection.
+**Current Reality:** Travelers lack insight into price dynamics. Researchers lack transparent data. Policy makers lack high-frequency airfare inflation signals.
 
 ---
 
@@ -59,7 +59,7 @@
 | **Data Normalization** | Base fare separated from taxes/convenience charges; outlier detection; handling cancellations |
 | **Transparency** | Append-only audit trail; source attribution; reproducible results |
 | **CPI Integration** | API-ready for NSO consumption; standardized data format; daily indexing capability |
-| **Economic Analysis** | Airfare Price Index computation; volatility measurement; seasonal pattern detection for CPI weighting |
+| **Dashboard & Index** | Real-time Airfare Price Index (APIx) visualization; trend analysis; elasticity curves |
 
 **Result:** NSO and RBI get **transparent, auditable, high-frequency airfare data** for CPI augmentation and monetary policy decisions.
 
@@ -319,7 +319,7 @@ CREATE TABLE fare_observations (
 ### **2. Clone & Setup**
 
 ```bash
-git clone https://github.com/Salvatore1021/BananaShake
+git clone https://github.com/adityagarg006/BananaShake
 cd BananaShake
 
 # Create virtual environment
@@ -489,7 +489,7 @@ CREATE TABLE fare_observations (
 );
 ```
 
-**Why append-only?** Time-series inflation measurement requires historical snapshots. Each quote at each moment = distinct fact. Updating rows would lose the temporal price evolution essential for CPI calculation.
+**Why append-only?** Historical price snapshots are the signal. Updating a row loses time-series information that powers trend analysis and price elasticity models.
 
 ---
 
@@ -544,10 +544,10 @@ Tunable values in `apixproj/settings.py`:
 - 🚧 **DGCA validation** — Backtest against published monthly average-fare data (30+ days)
 - 🚧 **NSO API endpoint** — Standardized JSON/CSV for CPI augmentation pipeline
 
-**Phase 4: Analytics & Policy Dashboard**
-- 🚧 NSO policy dashboard — Price trends, volatility metrics, seasonal patterns
-- 🚧 Economic analysis — Lead-time elasticity, demand surge correlation with events
-- 🚧 Outlier flagging — Automatically identify unusual price movements for investigator review
+**Phase 4: Dashboard & Analytics**
+- 🚧 Real-time dashboard with price trends, heatmaps, lead-time elasticity curves
+- 🚧 Sector-wise (route-wise) price volatility metrics
+- 🚧 Demand surge detection (festival seasons, events)
 
 **Phase 5: Production Hardening**
 - 🚧 API rate limits + service authentication (RBI/NSO credentials)
